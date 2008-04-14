@@ -1,0 +1,5 @@
+name = Option Image
+description = Allow the customer to upload images per attribute option.
+dependencies = uc_attribute
+package = "Ubercart - core (optional)"
+
