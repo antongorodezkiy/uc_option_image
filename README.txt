@@ -11,6 +11,13 @@
       Simply enable the module. Settings become available on the attribute settings page
       which is located at admin/store/settings/attributes
       
+      To display an image when no option image is available, the module will call theme_uc_option_image_no_image()
+      This defaults to grabbing and image called 'noimage.png' in your themes 'images' folder.
+      Example: sites/all/themes/mytheme/images/noimage.png
+      
+      Options must be displayed as select boxes in order for this modules selection 
+      JavaScript to work correctly.
+      
       -------------------------------------------------------------------------------
       PERMISSIONS
       ------------------------------------------------------------------------------- 
@@ -18,7 +25,15 @@
       view option images
       administer option images
               
-
+      -------------------------------------------------------------------------------
+      KNOWN ISSUES
+      ------------------------------------------------------------------------------- 
+      
+      When multiple nodes are displayed on the same page they will not switch 
+      properly due to "call_user_func_array('array_merge_recursive', $data)" in
+      drupal_add_js();
+      
+      This issue is being investegated, but for now this feature has been disabled.                              
           
 
 

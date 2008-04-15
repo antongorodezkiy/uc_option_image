@@ -9,6 +9,8 @@
 // @todo: removal of file rows and images
 // @todo: settings to create custom sizes
 // @todo: make sure it works for radios as well not just selects
+// @todo: display _original properly
+// @todo: handle issue of a derivative size not being availale
 
 /* -----------------------------------------------------------------
 
@@ -50,24 +52,35 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       break;
       
     case 'view':
-      if (isset($node->content['add_to_cart'])){
+      if (isset($node->content['add_to_cart'])){ 
         // Our node is displaying the attributes so we should add our javascript and display image.
         if (user_access('view option images')){
           if (count($node->attributes)){ 
-            $attributes = $node->attributes;
-            $first_attribute = array_shift($node->attributes); 
-            $default_option = $first_attribute->default_option; 
+            $attributes = $node->attributes;          
+            $first_attribute = array_shift($node->attributes);  
+            array_unshift($node->attributes, $first_attribute);
             $page_size = variable_get('uc_option_image_page_size', 'preview');  
             $teaser_size = variable_get('uc_option_image_teaser_size', 'thumbnail'); 
                     
-            // Pass all attributes to uc_option_image to populate JS settings
+            // Pass attributes to uc_option_image to populate JS settings
             if ($a4){
               uc_option_image($node, $attributes, $page_size); 
             }
             else {
-              uc_option_image($node, $attributes, $teaser_size); 
+              // @todo: uncomment below. This feature has been disabled due to issues
+              // with drupal_add_js() which require investigation.
+              // uc_option_image($node, $attributes, $teaser_size); 
             }
             
+            // Determine if we have a default option, if not then we should just use the first option available
+            if ($first_attribute->default_option){
+              $default_option = $first_attribute->default_option;
+            }
+            else {
+              $first_option = array_shift($first_attribute->options);
+              $default_option = $first_option->oid;
+            }
+                                         
             // Load the default image file
             $file = uc_option_image_load($node->nid, $first_attribute->aid, $default_option);
                  
@@ -189,6 +202,13 @@ function uc_option_image_form_alter($form_id, &$form){
           '#options' => $size_options,
           '#default_value' => variable_get('uc_option_image_page_size', 'preview'),
         );
+      $form['uc_option_image']['uc_option_image_default_size'] = array(
+          '#type' => 'select',
+          '#title' => t('Default Image Size'),
+          '#description' => t('The default image size will be used when others are not available for display, due to uploaded images being to small etc.'),
+          '#options' => $size_options,
+          '#default_value' => variable_get('uc_option_image_default_size', 'thumbnail'),
+        );
       $form['uc_option_image']['uc_option_image_node_weight'] = array(
           '#type' => 'weight',
           '#title' => t('Option Image Weight'),
@@ -203,6 +223,7 @@ function uc_option_image_form_alter($form_id, &$form){
             '#title' => t('Sizes'),
             '#collapsible' => TRUE,
             '#collapsed' => TRUE,
+            '#description' => t('Previously uploaded images will not resize when changes are made. Image derivatives must be rebuilt at !path', array('!path' => 'admin/content/node')),
           );
         foreach($sizes AS $label => $size){
           $form['uc_option_image']['sizes']['uc_option_image_size_' . $label . '_width'] = array(
@@ -232,7 +253,7 @@ function uc_option_image_node_operations() {
   if (user_access('administer option images')){
     $operations = array(
       'uc_option_image_rebuild_derivatives' => array(
-        'label' => t('Rebuild Option Image Thumbnail'),
+        'label' => t('Rebuild Option Image Thumbnails'),
         'callback' => 'uc_option_image_rebuild_derivatives',
       ),
     );
@@ -262,10 +283,11 @@ function uc_option_image_node_operations() {
 * @param string $size
 *   (optional) Size of image derivative that will be displayed when switching via JavaScipt.  
 * 
+* @todo: remove $attributes param and just use $node->attributes
 * @todo: abstract out the drupal_add_js so the object can be returned via js http request
 */
 function uc_option_image($node, $attributes, $size = 'thumbnail') {
-  static $prep, $data;        
+  static $prep, $data;         
   
   // Check if this feature is enabled
   if (!variable_get('uc_option_image_js', TRUE)){
@@ -273,7 +295,7 @@ function uc_option_image($node, $attributes, $size = 'thumbnail') {
   }  
   
   // Make sure we are even switching attributes
-  if (!variable_get('uc_option_image_attributes', '')){
+  if (!variable_get('uc_option_image_attributes', FALSE)){
     return;  
   }   
                        
@@ -282,6 +304,7 @@ function uc_option_image($node, $attributes, $size = 'thumbnail') {
     drupal_add_js(drupal_get_path('module', 'uc_option_image') . '/uc_option_image.js');
     $data = array();
     $data['size'] = $size;
+    $data['default_size'] = variable_get('uc_option_image_default_size', 'thumbnail');
     $data['effect'] = variable_get('uc_option_image_effect', 'fade');
     $data['noimage'] = theme('uc_option_image_no_image_path');
     $data['attributes'] = variable_get('uc_option_image_attributes', '');
@@ -294,25 +317,25 @@ function uc_option_image($node, $attributes, $size = 'thumbnail') {
   // for each option.                               
   if (count($attributes)){               
     foreach($attributes AS $aid => $attribute){  
-      if (count($attribute->options)){
+      if (count($attribute->options)){     
         foreach($attribute->options AS $oid => $option){
           $file = uc_option_image_load($node->nid, $aid, $oid);
-                             
+                                 
           if ($file->filepath){              
             $data['images'][$node->nid][$aid][$oid] = array(
                 'nid' => $node->nid,
                 'aid' => $aid,
                 'oid' => $oid,
                 'filepath' => $file->filepath,
-                'derivatives' => uc_option_image_get_derivatives($file),
-              );        
+                'derivatives' => uc_option_image_get_derivatives($file, TRUE),
+              );     
           }
         }
       }
     }
   }
-  
-  // @todo: causes array_merge_recursive() warning
+             
+  // @todo: fix array_merge_recursive() issues...
   @drupal_add_js(array('UCOI' => $data), 'setting');
 }       
                           
@@ -355,12 +378,12 @@ function uc_option_image_save($nid, $aid, $oid) {
     }
                                                       
     // Check format
-    if (!in_array($file->filemime, array('image/jpg', 'image/jpeg', 'image/gif'))){
-      drupal_set_message(t('Please upload image in jpg or gif formats.'), 'error');
+    if (!in_array($file->filemime, array('image/jpg', 'image/jpeg', 'image/gif', 'image/png'))){
+      drupal_set_message(t('Please upload image using jpg, png, or gif formats.'), 'error');
       return FALSE;
     }
                          
-    $dest = file_create_path('files/option-images');
+    $dest = file_create_path(file_directory_path() . '/option-images');
     file_check_directory($dest, FILE_CREATE_DIRECTORY);
     
     if ($file = file_save_upload(uc_option_image_uid($nid, $aid, $oid), $dest . '/' . $file->filename)){
@@ -410,7 +433,7 @@ function uc_option_image_save_derivatives($file, $dest) {
     if (image_scale($file->filepath, $dest . '/' . "{$info['filename']}.{$label}.{$info['extension']}", $dimensions['width'], $dimensions['height'])){
       drupal_set_message(t('Image derivative %label generated.', array('%label' => $label)));
     }
-    else {
+    else {           
       drupal_set_message(t('Image derivative %label failed to generate, or the image was to small.', array('%label' => $label)), 'error');  
     }
   }
@@ -432,12 +455,12 @@ function uc_option_image_rebuild_derivatives($nids) {
         foreach($node->option_images AS $i => $file){ 
           // Make sure we have the origional
           if (!file_exists($file->filepath)){
-            drupal_set_message(t('Origional image %filepath cannot generate derivatives.', array('%filepath' => $file->filepath)), 'error');
+            drupal_set_message(t('Origional image %filepath missing, cannot generate derivatives.', array('%filepath' => $file->filepath)), 'error');
             continue;  
           }
           
           // Create derivatives
-          $dest = file_create_path('files/option-images');  
+          $dest = file_create_path(file_directory_path() . '/option-images');  
           $derivatives = uc_option_image_get_derivatives($file);
           uc_option_image_save_derivatives($file, $dest);
         }
@@ -449,13 +472,22 @@ function uc_option_image_rebuild_derivatives($nids) {
 /**
 * Return array of derivative filepaths.
 */
-function uc_option_image_get_derivatives($file) {
+function uc_option_image_get_derivatives($file, $check_exists = FALSE) {
   $derivatives = array('_original' => $file->filepath);
   $info = pathinfo($file->filepath);  
   $sizes = uc_option_image_get_sizes(); 
-    
+                       
   foreach($sizes AS $label => $size){
-    $derivatives[$label] = "{$info['dirname']}/{$info['filename']}.{$label}.{$info['extension']}"; 
+    $filename = "{$info['dirname']}/{$info['filename']}.{$label}.{$info['extension']}";;
+    
+    if ($check_exists){   
+      if (file_exists($filename)){
+        $derivatives[$label] = $filename;   
+      }
+    }
+    else {
+      $derivatives[$label] = $filename; 
+    }
   }
   
   return $derivatives;
@@ -488,7 +520,7 @@ function uc_option_image_get_sizes() {
 * Return array of image size options including _original.
 */
 function uc_option_image_get_size_options() {
-  $options = array('_original');
+  $options = array('_original' => t('Original'));
   $sizes = @array_keys((array) uc_option_image_get_sizes());
   
   if (!count($sizes)){
@@ -579,11 +611,7 @@ function uc_option_image_uc_attribute_admin_settings_validate($form_id, $form_va
 
 /**
 * Theme an option image.
-* 
-* We set $getsize with theme_image to false so that images
-* resize appropriately if they do not happen to be the same
-* size when switch with JavaScript.
-* 
+
 * @param object $file
 *   File object fetched by uc_option_image_load();
 * 
@@ -591,6 +619,7 @@ function uc_option_image_uc_attribute_admin_settings_validate($form_id, $form_va
 *   - '_original'
 *   - 'thumbnail'
 *   - 'preview'
+*   - 'showcase'
 * 
 * @return string
 *   Markup.
@@ -601,13 +630,17 @@ function theme_uc_option_image($file, $size = 'thumbnail') {
              
   if ($size != '_original'){
     $filepath = $info['dirname'] . '/' . $info['filename'] . '.' . $size . '.' . $info['extension']; 
+    $default  = $info['dirname'] . '/' . $info['filename'] . '.' . variable_get('uc_option_image_default_size', 'thumbnail') . '.' . $info['extension']; 
                            
     if (file_exists($filepath)){                             
       return theme('image', $filepath, NULL, NULL, $attributes, FALSE); 
     }
+    else {
+      return theme('image', $default, NULL, NULL, $attributes, FALSE);    
+    }
   }
   else {
-    return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE); 
+    return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE);  
   }
 }
 
@@ -615,8 +648,8 @@ function theme_uc_option_image($file, $size = 'thumbnail') {
 * Theme the no image placeholder. 
 */
 function theme_uc_option_image_no_image() {
-  $attributes = array('class' => 'uc-option-image'); 
-  return theme('image', path_to_theme() . '/images/noimage.png', t('No Image'), NULL, $attributes);
+  $attributes = array('class' => 'uc-option-image');                                             
+  return theme('image', path_to_theme() . '/images/noimage.png', t('No Image'), NULL, $attributes, FALSE);
 }
 
 /**
