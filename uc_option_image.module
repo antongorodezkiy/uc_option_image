@@ -506,10 +506,10 @@ function theme_uc_option_image($file, $size = '_original') {
   $attributes = array('class' => 'uc-option-image');
        
   // Display imagecache preset or the original image      
-  if ($size != '_original'){
+  if ($size != '_original'){                    
     return theme('imagecache', $size, $file->filepath, NULL, NULL, $attributes);                       
   }
-  else {     
+  else {                             
     return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE);  
   }
 }
@@ -550,7 +550,7 @@ function theme_uc_option_image_no_image($node, $size = '_original') {
     return theme('imagecache', $size, $filename, t('No Image'), NULL, $attributes);
   }
   else {                                                        
-    return theme('image', $filename, t('No Image'), NULL, $attributes);
+    return theme('image', $filename, t('No Image'), NULL, $attributes, FALSE);
   }
 }
 
