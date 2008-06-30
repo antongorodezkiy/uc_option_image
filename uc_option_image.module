@@ -3,14 +3,15 @@
 /**
 * @file 
 * Provides image upload fields for attribute options.
-* @author Tj Holowaychuk <http://www.350designs.com/>
+* @author Tj Holowaychuk <tj@vision-media.ca/>
+* @link http://vision-media.ca
 */
 
-// @todo: removal of file rows and images
-// @todo: settings to create custom sizes
+// @todo: conditionally show image upload fields
+// @todo: removal of file rows and images, create own table
+// @todo: implement imagecache
 // @todo: make sure it works for radios as well not just selects
 // @todo: display _original properly
-// @todo: handle issue of a derivative size not being availale
 
 /* -----------------------------------------------------------------
 
@@ -171,13 +172,15 @@ function uc_option_image_form_alter($form_id, &$form){
           '#description' => t('Use JavaScript to switch attribute option images when selected from a select field if it is available.'),
           '#default_value' => variable_get('uc_option_image_js', TRUE),
         );
-      $form['uc_option_image']['uc_option_image_attributes'] = array(
-          '#type' => 'checkboxes',
-          '#title' => t('Switch Attributes'),
-          '#description' => t('Only checked attributes will attempt to be switched when changed. For example you would want to check "Shoe Style" but not "Shoe Size", because "Shoe Size" most likely does not have associated images.'),
-          '#options' => $attribute_options,
-          '#default_value' => variable_get('uc_option_image_attributes', ''),
-        );
+      if (!empty($attribute_options)){
+        $form['uc_option_image']['uc_option_image_attributes'] = array(
+            '#type' => 'checkboxes',
+            '#title' => t('Switch Attributes'),
+            '#description' => t('Only checked attributes will attempt to be switched when changed. For example you would want to check "Shoe Style" but not "Shoe Size", as "Shoe Size" most likely does not have associated images.'),
+            '#options' => $attribute_options,
+            '#default_value' => variable_get('uc_option_image_attributes', ''),
+          );
+      }
       $form['uc_option_image']['uc_option_image_effect'] = array(
           '#type' => 'select',
           '#title' => t('Switch Effect'),
