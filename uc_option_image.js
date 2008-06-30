@@ -31,7 +31,7 @@ UCOI.switchImage = function(input, size) {
   var aid = id.replace('edit-attributes-', '');
   var oid = $(input).val(); 
   var image = $(input).parents('.content').children('img.uc-option-image');       
-  
+          
   // Make sure we have permission to switch this attribute
   if (this.attributes[aid] === 0){
     return;
@@ -39,15 +39,10 @@ UCOI.switchImage = function(input, size) {
           
   try {          
     var images = this.images[nid][aid];
-                                          
-    if (images[oid].derivatives[size]){ 
-      var imagepath = Drupal.settings.base_path + images[oid].derivatives[size];   
-      this.switchImageEffect(image, imagepath);
+    
+    if (images[oid].derivative){ 
+      this.switchImageEffect(image, images[oid].derivative);
     } 
-    else { 
-      var imagepath = Drupal.settings.base_path + images[oid].derivatives[this.defaultSize];   
-      this.switchImageEffect(image, imagepath);
-    }
   }
   catch (e){   
     this.switchImageEffect(image, this.noimage); 

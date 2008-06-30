@@ -9,12 +9,10 @@
 
 // @todo: conditionally show image upload fields
 // @todo: removal of file rows and images, create own table
-// @todo: implement imagecache
-// @todo: preload images inline
 // @todo: make sure it works for radios as well not just selects
-// @todo: display _original properly
 // @todo: overall default image?
 // @todo: better method of determining the default image to display
+// @todo: better noimage support per type, size, etc
 
 /* -----------------------------------------------------------------
 
@@ -34,20 +32,29 @@ function uc_option_image_perm(){
  */
 function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op){
-    case 'load':
+    case 'load':  
       // Load option images
       // Keep in mind the file 'nid' is a mash of nid/aid/oid
       // @todo: remove dependancy for the nid column, create relation table rather than the mash above
       $node->option_images = array();
+      $node->option_images_cached = array();
       $node->attributes = uc_product_get_attributes($node->nid);
        
-      if (count($node->attributes)){    
+      if (count($node->attributes)){ 
+        $page_size = variable_get('uc_option_image_page_size', 'preview');     
         foreach($node->attributes AS $attribute){
           if (count($attribute->options)){
             foreach($attribute->options AS $option){
               $file = uc_option_image_load($node->nid, $attribute->aid, $option->oid);
               if ($file->filepath){
                 $node->option_images[] = $file;
+                // Load imagecached option images
+                if ($page_size != '_original'){
+                  $node->option_images_cached[$option->oid] = imagecache_create_url($page_size, $file->filepath);
+                }
+                else {
+                  $node->option_images_cached[$option->oid] = $file->filepath;
+                }
               }
             }
           }           
@@ -311,14 +318,14 @@ function uc_option_image($node, $attributes, $size = 'thumbnail') {
       if (count($attribute->options)){     
         foreach($attribute->options AS $oid => $option){
           $file = uc_option_image_load($node->nid, $aid, $oid);
-                                 
+                            
           if ($file->filepath){              
             $data['images'][$node->nid][$aid][$oid] = array(
                 'nid' => $node->nid,
                 'aid' => $aid,
                 'oid' => $oid,
                 'filepath' => $file->filepath,
-                'derivatives' => uc_option_image_get_derivatives($file),
+                'derivative' => $node->option_images_cached[$oid],
               );     
           }
         }
@@ -406,15 +413,6 @@ function uc_option_image_save($nid, $aid, $oid) {
  */
 function uc_option_image_delete($nid, $aid, $oid) {
   return db_query("DELETE FROM {files} WHERE nid = %d", $nid . $aid . $oid);    
-}
-
-/**
- * Get image derivatives.
- * 
- * @return array
- */
-function uc_option_image_get_derivatives($file) {
-
 }
 
 /**
@@ -525,7 +523,7 @@ function theme_uc_option_image_preloaded($node, $size = '_original') {
   $output = '<div id="uc-option-image-preloaded-' . $node->nid . '" class="uc-option-image-preloaded" style="display: none;">';
   
   foreach((array) $node->option_images AS $i => $option_image){   
-    $output .= theme('uc_option_image', $option_image, $size); 
+    $output .= theme('uc_option_image', $option_image, $size);
   }
   
   $output .= '</div>';
