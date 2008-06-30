@@ -12,6 +12,7 @@
 // @todo: implement imagecache
 // @todo: make sure it works for radios as well not just selects
 // @todo: display _original properly
+// @todo: overall default image?
 
 /* -----------------------------------------------------------------
 
@@ -157,9 +158,16 @@ function uc_option_image_form_alter($form_id, &$form){
       if (!user_access('administer option images')){
         break;     
       }
-      $sizes = uc_option_image_get_sizes(); 
+      $presets = imagecache_presets();
       $size_options = uc_option_image_get_size_options();
       $attribute_options = uc_option_image_get_attribute_options(); 
+      
+      // Ensure we have imagecache presets otherwise
+      // display a message so they can create presets first.
+      if (empty($presets)){
+        drupal_set_message(t('In order to use Option Images you must first create image presets at !link.', array('!link' => l('admin/build/imagecache', 'admin/build/imagecache'))));
+        break;
+      }
       
       $form['#validate']['uc_option_image_uc_attribute_admin_settings_validate'] = array();
       $form['uc_option_image'] = array(
@@ -489,41 +497,18 @@ function uc_option_image_get_derivatives($file, $check_exists = FALSE) {
 }
 
 /**
-* Return array of option image sizes.
-*/
-function uc_option_image_get_sizes() {
-  static $sizes;
-  
-  if (!$sizes){
-    // Thumbnail
-    $sizes['thumbnail']['width'] = variable_get('uc_option_image_size_thumbnail_width', 150);
-    $sizes['thumbnail']['height'] = variable_get('uc_option_image_size_thumbnail_height', 150);
-    
-    // Preview
-    $sizes['preview']['width'] = variable_get('uc_option_image_size_preview_width', 500);
-    $sizes['preview']['height'] = variable_get('uc_option_image_size_preview_height', 500);
-    
-    // Showcase
-    $sizes['showcase']['width'] = variable_get('uc_option_image_size_showcase_width', 800);
-    $sizes['showcase']['height'] = variable_get('uc_option_image_size_showcase_height', 800);
-  }
-  
-  return $sizes;
-}
-
-/**
-* Return array of image size options including _original.
+* Return array of imagecache presets as options.
 */
 function uc_option_image_get_size_options() {
   $options = array('_original' => t('Original'));
-  $sizes = @array_keys((array) uc_option_image_get_sizes());
+  $presets = imagecache_presets(); 
   
-  if (!count($sizes)){
+  if (empty($presets)){
     return FALSE;
   }
   
-  foreach($sizes AS $label){
-    $options[$label] = $label;
+  foreach((array) $presets AS $preset){ 
+    $options[$preset['presetid']] = $preset['presetname'];
   }
   
   return $options;
