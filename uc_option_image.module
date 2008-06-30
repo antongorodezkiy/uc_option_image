@@ -56,6 +56,7 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       break;
       
     case 'view':
+      // @todo issue being invoked so many times?
       if (isset($node->content['add_to_cart'])){ 
         if (user_access('view option images')){
           if (count($node->attributes)){ 
@@ -86,7 +87,7 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
             // Ensure that original file exists
             if ($file->filepath && file_exists($file->filepath)){
               if ($a4){
-                $image = theme('uc_option_image', $file, $page_size);
+                $image = theme('uc_option_image', $file, $page_size);  
               } 
               else {
                 $image = theme('uc_option_image', $file, $teaser_size);
@@ -95,9 +96,14 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
             else {      
               $image = theme('uc_option_image_no_image');
             }
-                 
+            
+            // Preload images
+            if ($a4){
+              $preloaded_images = theme('uc_option_image_preloaded', $node, $page_size); 
+            }
+            
             $node->content['option_image'] = array(
-                '#value' => $image,
+                '#value' => $image . $preloaded_images,
                 '#access' => user_access('view option images'),
                 '#weight' => (int) variable_get('uc_option_image_node_weight', '-15'),
               );      
@@ -375,7 +381,6 @@ function uc_option_image_save($nid, $aid, $oid) {
       $file->fid = db_next_id('{files}_fid');
       db_query("DELETE FROM {files} WHERE nid = %d", $nid . $aid . $oid);
       db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s','%s','%s',%d)", $file->fid, $nid . $aid . $oid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
-      uc_option_image_save_derivatives($file, $dest);
        
       return $file;
     } 
@@ -495,13 +500,37 @@ function uc_option_image_uc_object_options_form($form_id, $form_values) {
 function theme_uc_option_image($file, $size = '_original') {
   $info = pathinfo($file->filepath);               
   $attributes = array('class' => 'uc-option-image');
-             
+       
+  // Display imagecache preset or the original image      
   if ($size != '_original'){
     return theme('imagecache', $size, $file->filepath, NULL, NULL, $attributes);                       
   }
-  else {
+  else {     
     return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE);  
   }
+}
+
+/**
+ * Theme option image preloaded images.
+ *
+ * @param object $node
+ * 
+ * @param string $size
+ *   (optional) An imagecache preset or '_original'.
+ * 
+ * @return string
+ *   Markup.
+ */
+function theme_uc_option_image_preloaded($node, $size = '_original') {
+  $output = '<div id="uc-option-image-preloaded-' . $node->nid . '" class="uc-option-image-preloaded" style="display: none;">';
+  
+  foreach((array) $node->option_images AS $i => $option_image){   
+    $output .= theme('uc_option_image', $option_image, $size); 
+  }
+  
+  $output .= '</div>';
+          
+  return $output;
 }
 
 /**
