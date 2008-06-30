@@ -1,8 +1,8 @@
 
      
       Ubercart Option Images
-      Provided by www.350designs.com
-      Developed by Tj Holowaychuk       
+      Provided by www.vision-media.ca
+      Developed by Tj Holowaychuk <tj@vision-media.ca>      
      
       ------------------------------------------------------------------------------- 
       INSTALLATION
