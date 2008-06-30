@@ -205,13 +205,6 @@ function uc_option_image_form_alter($form_id, &$form){
           '#options' => $size_options,
           '#default_value' => variable_get('uc_option_image_page_size', 'preview'),
         );
-      $form['uc_option_image']['uc_option_image_default_size'] = array(
-          '#type' => 'select',
-          '#title' => t('Default Image Size'),
-          '#description' => t('The default image size will be used when others are not available for display, due to uploaded images being to small etc.'),
-          '#options' => $size_options,
-          '#default_value' => variable_get('uc_option_image_default_size', 'thumbnail'),
-        );
       $form['uc_option_image']['uc_option_image_node_weight'] = array(
           '#type' => 'weight',
           '#title' => t('Option Image Weight'),
@@ -307,7 +300,6 @@ function uc_option_image($node, $attributes, $size = 'thumbnail') {
     drupal_add_js(drupal_get_path('module', 'uc_option_image') . '/uc_option_image.js');
     $data = array();
     $data['size'] = $size;
-    $data['default_size'] = variable_get('uc_option_image_default_size', 'thumbnail');
     $data['effect'] = variable_get('uc_option_image_effect', 'fade');
     $data['noimage'] = theme('uc_option_image_no_image_path');
     $data['attributes'] = variable_get('uc_option_image_attributes', '');
@@ -633,14 +625,8 @@ function theme_uc_option_image($file, $size = 'thumbnail') {
              
   if ($size != '_original'){
     $filepath = $info['dirname'] . '/' . $info['filename'] . '.' . $size . '.' . $info['extension']; 
-    $default  = $info['dirname'] . '/' . $info['filename'] . '.' . variable_get('uc_option_image_default_size', 'thumbnail') . '.' . $info['extension']; 
                            
-    if (file_exists($filepath)){                             
-      return theme('image', $filepath, NULL, NULL, $attributes, FALSE); 
-    }
-    else {
-      return theme('image', $default, NULL, NULL, $attributes, FALSE);    
-    }
+    return theme('image', $filepath, NULL, NULL, $attributes, FALSE); 
   }
   else {
     return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE);  
