@@ -64,6 +64,7 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       
     case 'view':
       // @todo issue being invoked so many times?
+      // @todo refactor
       if (isset($node->content['add_to_cart'])){ 
         if (user_access('view option images')){
           if (count($node->attributes)){ 
@@ -100,8 +101,13 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
                 $image = theme('uc_option_image', $file, $teaser_size);
               }   
             }
-            else {      
-              $image = theme('uc_option_image_no_image');
+            else {   
+              if ($a4){
+                $image = theme('uc_option_image_no_image', $node, $page_size);  
+              } 
+              else {
+                $image = theme('uc_option_image_no_image', $node, $teaser_size);
+              }   
             }
             
             // Preload images
@@ -280,12 +286,12 @@ function uc_option_image_form_alter($form_id, &$form){
  *   Attribute objects.
  * 
  * @param string $size
- *   (optional) Size of image derivative that will be displayed when switching via JavaScipt.  
+ *   (optional) Imagecache preset or '_original'.  
  * 
  * @todo: remove $attributes param and just use $node->attributes
  * @todo: abstract out the drupal_add_js so the object can be returned via js http request
  */
-function uc_option_image($node, $attributes, $size = 'thumbnail') {
+function uc_option_image($node, $attributes, $size = '_original') {
   static $prep, $data;         
   
   // Check if this feature is enabled
@@ -304,7 +310,7 @@ function uc_option_image($node, $attributes, $size = 'thumbnail') {
     $data = array();
     $data['size'] = $size;
     $data['effect'] = variable_get('uc_option_image_effect', 'fade');
-    $data['noimage'] = theme('uc_option_image_no_image_path');
+    $data['noimage'] = theme('uc_option_image_no_image_path', $node, $size);
     $data['attributes'] = variable_get('uc_option_image_attributes', '');
     $prep = TRUE;
   }                             
@@ -526,6 +532,8 @@ function theme_uc_option_image_preloaded($node, $size = '_original') {
     $output .= theme('uc_option_image', $option_image, $size);
   }
   
+  $output .= theme('uc_option_image_no_image', $node, $size);
+  
   $output .= '</div>';
           
   return $output;
@@ -534,16 +542,30 @@ function theme_uc_option_image_preloaded($node, $size = '_original') {
 /**
  * Theme the no image placeholder. 
  */
-function theme_uc_option_image_no_image() {
-  $attributes = array('class' => 'uc-option-image');                                             
-  return theme('image', path_to_theme() . '/images/noimage.png', t('No Image'), NULL, $attributes, FALSE);
+function theme_uc_option_image_no_image($node, $size = '_original') {
+  $attributes = array('class' => 'uc-option-image');
+  $filename = path_to_theme() . '/images/noimage.png';
+  
+  if ($size != '_original'){           
+    return theme('imagecache', $size, $filename, t('No Image'), NULL, $attributes);
+  }
+  else {                                                        
+    return theme('image', $filename, t('No Image'), NULL, $attributes);
+  }
 }
 
 /**
  * Theme the no image placeholder. Must be a valid imagepath.
  */
-function theme_uc_option_image_no_image_path() {
-  return url(path_to_theme() . '/images/noimage.png');
+function theme_uc_option_image_no_image_path($node, $size = '_original') {
+  $filename = path_to_theme() . '/images/noimage.png';
+  
+  if ($size != '_original'){           
+    return imagecache_create_url($size, $filename);
+  }
+  else {                                                        
+    return $filename;
+  }
 }
 
 /* -----------------------------------------------------------------
