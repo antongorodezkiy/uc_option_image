@@ -8,7 +8,8 @@
       INSTALLATION
       ------------------------------------------------------------------------------- 
       
-      Simply enable the module. Settings become available on the attribute settings page
+      Install the imagecache module located at http://drupal.org/project/imagecache 
+      then enable this module. Settings become available on the attribute settings page
       which is located at admin/store/settings/attributes
       
       To display an image when no option image is available, the module will call theme_uc_option_image_no_image()
