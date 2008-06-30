@@ -138,7 +138,7 @@ function uc_option_image_form_alter($form_id, &$form){
               if ($file->fid){
                 $form['attributes'][$aid]['options'][$oid]['option_image_preview'] = array(
                     '#type' => 'markup',                       
-                    '#value' => theme('uc_option_image', $file),       
+                    '#value' => theme('uc_option_image', $file, variable_get('uc_option_image_preview_size', '_original')),       
                   );  
               }
               $form['attributes'][$aid]['options'][$oid][uc_option_image_uid($nid, $aid, $oid)] = array(
@@ -203,20 +203,27 @@ function uc_option_image_form_alter($form_id, &$form){
               'fade' => t('Fade'),
             ),
           '#default_value' => variable_get('uc_option_image_effect', 'fade'),
+        );     
+      $form['uc_option_image']['uc_option_image_preview_size'] = array(
+          '#type' => 'select',
+          '#title' => t('Preview Image Size'),
+          '#description' => t('Image size to display in the option table when editing a product.'),
+          '#options' => $size_options,
+          '#default_value' => variable_get('uc_option_image_preview_size', '_original') ,
         );
       $form['uc_option_image']['uc_option_image_teaser_size'] = array(
           '#type' => 'select',
           '#title' => t('Teaser Image Size'),
           '#description' => t('Image size which will display in teaser listings.'),
           '#options' => $size_options,
-          '#default_value' => variable_get('uc_option_image_teaser_size', 'thumbnail'),
+          '#default_value' => variable_get('uc_option_image_teaser_size', '_original'),
         );
       $form['uc_option_image']['uc_option_image_page_size'] = array(
           '#type' => 'select',
           '#title' => t('Page Image Size'),
           '#description' => t('Image size which will display in a full page view.'),
           '#options' => $size_options,
-          '#default_value' => variable_get('uc_option_image_page_size', 'preview'),
+          '#default_value' => variable_get('uc_option_image_page_size', '_original'),
         );
       $form['uc_option_image']['uc_option_image_node_weight'] = array(
           '#type' => 'weight',
@@ -496,7 +503,7 @@ function theme_uc_option_image($file, $size = '_original') {
   // Display imagecache preset or the original image      
   if ($size != '_original'){                    
     return theme('imagecache', $size, $file->filepath, NULL, NULL, $attributes);                       
-  }
+  }      
   else {                             
     return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE);  
   }
