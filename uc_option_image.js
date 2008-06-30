@@ -2,8 +2,8 @@
 var UCOI = UCOI || {};
 
 /**
-* Initialize.
-*/
+ * Initialize.
+ */
 UCOI.init = function() {
   var size = Drupal.settings.UCOI.size;   
   this.images = Drupal.settings.UCOI.images; 
@@ -11,24 +11,28 @@ UCOI.init = function() {
   this.noimage = Drupal.settings.UCOI.noimage;
   this.attributes = Drupal.settings.UCOI.attributes;
   this.defaultSize = Drupal.settings.UCOI.default_size;
-                                        
+  
+  // Selects                                      
   $('.add_to_cart select.form-select').change(function(){
-    var name = $(this).attr('name');
-    
-    if (name.substr(0, 10) == 'attributes'){
-      UCOI.switchImage(this, size);  
+    if (aid = UCOI.getAID(this)){
+      UCOI.switchImage(aid, this, size);  
+    }
+  });
+  
+  // Radios                                      
+  $('.add_to_cart .form-radios input').click(function(){
+    if (aid = UCOI.getAID(this)){
+      UCOI.switchImage(aid, this, size);  
     }
   });
 };
 
 /**
-* Switch an option image.
-*/
-UCOI.switchImage = function(input, size) {
-  var id = $(input).attr('id');
+ * Switch an option image.
+ */
+UCOI.switchImage = function(aid, input, size) {
   var pid = $(input).parents('.node').attr('id');
   var nid = pid.replace('node-', '');             
-  var aid = id.replace('edit-attributes-', '');
   var oid = $(input).val(); 
   var image = $(input).parents('.content').children('img.uc-option-image');       
           
@@ -50,8 +54,8 @@ UCOI.switchImage = function(input, size) {
 };
 
 /**
-* Switch the imagepath based on the selected effect.
-*/
+ * Switch the imagepath based on the selected effect.
+ */
 UCOI.switchImageEffect = function(image, imagepath) {
   switch(this.effect){
     case 'fade':
@@ -63,6 +67,14 @@ UCOI.switchImageEffect = function(image, imagepath) {
     default:
       $(image).attr('src', imagepath); 
   }
+};
+
+/**
+ * Get attribute AID from an input.
+ */
+UCOI.getAID = function(input) {
+  var name = $(input).attr('name');
+  return name.match(/attributes\[([0-9]+)\]/)[1]; 
 };
 
 if (Drupal.jsEnabled) {

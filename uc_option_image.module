@@ -7,13 +7,6 @@
 * @link http://vision-media.ca
 */
 
-// @todo: conditionally show image upload fields
-// @todo: removal of file rows and images, create own table
-// @todo: make sure it works for radios as well not just selects
-// @todo: overall default image?
-// @todo: better method of determining the default image to display
-// @todo: better noimage support per type, size, etc
-
 /* -----------------------------------------------------------------
 
   Hook Implementations 
@@ -73,19 +66,17 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
             array_unshift($node->attributes, $first_attribute);
             $page_size = variable_get('uc_option_image_page_size', 'preview');  
             $teaser_size = variable_get('uc_option_image_teaser_size', 'thumbnail'); 
+            $size = $a4 ? $page_size : $teaser_size;
                    
             // Pass attributes to uc_option_image to populate JS settings
             if ($a4){
-              uc_option_image($node, $attributes, $page_size); 
+              uc_option_image($node, $attributes, $size); 
             }
             
-            // Determine if we have a default option, if not then we should just use the first option available
+            // Determine if we have a default option using
+            // the first attribute's default option
             if ($first_attribute->default_option){
               $default_option = $first_attribute->default_option;
-            }
-            else {
-              $first_option = array_shift($first_attribute->options);
-              $default_option = $first_option->oid;
             }
                                        
             // Load the default image file
@@ -94,25 +85,15 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
             // Display the image based on teaser/page view
             // Ensure that original file exists
             if ($file->filepath && file_exists($file->filepath)){
-              if ($a4){
-                $image = theme('uc_option_image', $file, $page_size);  
-              } 
-              else {
-                $image = theme('uc_option_image', $file, $teaser_size);
-              }   
+              $image = theme('uc_option_image', $file, $size);  
             }
             else {   
-              if ($a4){
-                $image = theme('uc_option_image_no_image', $node, $page_size);  
-              } 
-              else {
-                $image = theme('uc_option_image_no_image', $node, $teaser_size);
-              }   
+              $image = theme('uc_option_image_no_image', $node, $size);
             }
             
             // Preload images
             if ($a4){
-              $preloaded_images = theme('uc_option_image_preloaded', $node, $page_size); 
+              $preloaded_images = theme('uc_option_image_preloaded', $node, $size); 
             }
             
             $node->content['option_image'] = array(
