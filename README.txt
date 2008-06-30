@@ -13,12 +13,19 @@
       which is located at admin/store/settings/attributes
       
       To display an image when no option image is available, the module will call theme_uc_option_image_no_image()
-      This defaults to grabbing and image called 'noimage.png' in your themes 'images' folder.
+      This defaults to grabbing and image called 'noimage.png' in your themes 'images' folder. By
+      default this theme with implement the imagecache preset size chosen in order to
+      adjust the noimage image similar to that of the option images.      
+      
       Example: sites/all/themes/mytheme/images/noimage.png
       
-      Options must be displayed as select boxes in order for this modules selection 
-      JavaScript to work correctly.
-      
+      ------------------------------------------------------------------------------- 
+      MARKUP REQUIREMENTS
+      ------------------------------------------------------------------------------- 
+       
+      Due to the nature of JavaScript dependency upon markup, this module supports
+      default node.tpl.php and form item markup in order to switch images properly.
+       
       -------------------------------------------------------------------------------
       PERMISSIONS
       ------------------------------------------------------------------------------- 

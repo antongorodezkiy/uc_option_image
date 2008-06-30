@@ -368,9 +368,9 @@ function uc_option_image_save($nid, $aid, $oid) {
       drupal_set_message(t('Your image filesize is larger than 2MB. Resize or compress your image and try again.'), 'error');
       return FALSE;
     }
-                                                      
+                                                  
     // Check format
-    if (!in_array($file->filemime, array('image/jpg', 'image/jpeg', 'image/gif', 'image/png'))){
+    if (!in_array(pathinfo($file->filename, PATHINFO_EXTENSION), array('png', 'jpeg', 'gif'))){
       drupal_set_message(t('Please upload image using jpg, png, or gif formats.'), 'error');
       return FALSE;
     }
