@@ -141,8 +141,15 @@ function uc_option_image_form_alter($form_id, &$form){
       // Add option image previews and browse fields
       if ($aids = element_children($form['attributes'])){  
         $nid = arg(1); 
-                                           
+        $attributes = variable_get('uc_option_image_attributes', '');
+                                       
         foreach($aids AS $aid){ 
+          // Make sure the attribute is switchable
+          if (isset($attributes[$aid]) && !$attributes[$aid]){
+            continue;
+          }
+          
+          // Display fields
           if ($oids = element_children($form['attributes'][$aid]['options'])){ 
             foreach($oids AS $oid){ 
               $file = uc_option_image_load($nid, $aid, $oid);
