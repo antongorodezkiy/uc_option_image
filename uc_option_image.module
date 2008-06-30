@@ -14,6 +14,7 @@
 // @todo: make sure it works for radios as well not just selects
 // @todo: display _original properly
 // @todo: overall default image?
+// @todo: better method of determining the default image to display
 
 /* -----------------------------------------------------------------
 
@@ -56,7 +57,6 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       
     case 'view':
       if (isset($node->content['add_to_cart'])){ 
-        // Our node is displaying the attributes so we should add our javascript and display image.
         if (user_access('view option images')){
           if (count($node->attributes)){ 
             $attributes = $node->attributes;          
@@ -64,7 +64,7 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
             array_unshift($node->attributes, $first_attribute);
             $page_size = variable_get('uc_option_image_page_size', 'preview');  
             $teaser_size = variable_get('uc_option_image_teaser_size', 'thumbnail'); 
-                    
+                   
             // Pass attributes to uc_option_image to populate JS settings
             if ($a4){
               uc_option_image($node, $attributes, $page_size); 
@@ -78,11 +78,12 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
               $first_option = array_shift($first_attribute->options);
               $default_option = $first_option->oid;
             }
-                                         
+                                       
             // Load the default image file
             $file = uc_option_image_load($node->nid, $first_attribute->aid, $default_option);
-                 
+                      
             // Display the image based on teaser/page view
+            // Ensure that original file exists
             if ($file->filepath && file_exists($file->filepath)){
               if ($a4){
                 $image = theme('uc_option_image', $file, $page_size);
@@ -423,7 +424,7 @@ function uc_option_image_get_size_options() {
   }
   
   foreach((array) $presets AS $preset){ 
-    $options[$preset['presetid']] = $preset['presetname'];
+    $options[$preset['presetname']] = $preset['presetname'];
   }
   
   return $options;
@@ -484,22 +485,19 @@ function uc_option_image_uc_object_options_form($form_id, $form_values) {
  *   File object fetched by uc_option_image_load();
  * 
  * @param string $size
- *   - '_original'
- *   - 'thumbnail'
- *   - 'preview'
- *   - 'showcase'
+ *   (optional) An imagecache preset or '_original'.
+ * 
+ * @todo generate alt
  * 
  * @return string
  *   Markup.
  */
-function theme_uc_option_image($file, $size = 'thumbnail') {
+function theme_uc_option_image($file, $size = '_original') {
   $info = pathinfo($file->filepath);               
   $attributes = array('class' => 'uc-option-image');
              
   if ($size != '_original'){
-    $filepath = $info['dirname'] . '/' . $info['filename'] . '.' . $size . '.' . $info['extension']; 
-                           
-    return theme('image', $filepath, NULL, NULL, $attributes, FALSE); 
+    return theme('imagecache', $size, $file->filepath, NULL, NULL, $attributes);                       
   }
   else {
     return theme('image', $file->filepath, NULL, NULL, $attributes, FALSE);  
