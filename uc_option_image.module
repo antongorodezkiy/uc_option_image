@@ -7,6 +7,12 @@
 * @link http://vision-media.ca
 */
 
+// @todo supply 'default' image field when no option images are supplied or 
+// no option image attributes are applied to the product
+// @todo create per class / product 'layer' mode allowing z-index to configure a product
+// using layers of PNG images
+// @todo integrate with threeiv module?
+
 /* -----------------------------------------------------------------
 
   Hook Implementations 
@@ -267,6 +273,15 @@ function uc_option_image_form_alter($form_id, &$form){
   General Functionality 
 
 ------------------------------------------------------------------ */
+
+/**
+ * Support both imagecache 1.6 and 2.0
+ */
+if (module_exists('imagecache') && !function_exists('imagecache_presets')){
+  function imagecache_presets($reset = FALSE) {
+    return _imagecache_get_presets($reset = FALSE);
+  }
+}
 
 /**
  * Add JavaSript and CSS in order to run uc_option_image's switching functionality.
