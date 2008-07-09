@@ -280,6 +280,7 @@ function uc_option_image_form_alter($form_id, &$form){
  */
 if (module_exists('imagecache') && !function_exists('imagecache_presets')){
   define('IMAGECACHE_BASE', 1);
+  // Previously undefined in 1.x
   function imagecache_presets($reset = FALSE) {
     return _imagecache_get_presets($reset = FALSE);
   }
@@ -447,10 +448,19 @@ function uc_option_image_get_size_options() {
     return FALSE;
   }
   
-  foreach((array) $presets AS $preset){ 
-    $options[$preset['presetname']] = $preset['presetname'];
+  // imagecache 1.x
+  if (IMAGECACHE_BASE == 1){
+    foreach((array) $presets AS $preset){ 
+      $options[$preset] = $preset;
+    }
   }
-  
+  // imagecache 2.x
+  else {
+    foreach((array) $presets AS $preset){ 
+      $options[$preset['presetname']] = $preset['presetname'];
+    }
+  }
+       
   return $options;
 }
 
