@@ -11,13 +11,12 @@
 // no option image attributes are applied to the product
 // @todo create per class / product 'layer' mode allowing z-index to configure a product
 // using layers of PNG images
-// @todo integrate with threeiv module?
 
 /* -----------------------------------------------------------------
 
   Hook Implementations 
 
------------------------------------------------------------------- */
+------------------------------------------------------------------ */  
 
 /**
  * Implementation of hook_perm();
@@ -176,7 +175,9 @@ function uc_option_image_form_alter($form_id, &$form){
       // Ensure we have imagecache presets otherwise
       // display a message so they can create presets first.
       if (empty($presets)){
-        drupal_set_message(t('In order to use Option Images you must first create image presets at !link.', array('!link' => l('admin/build/imagecache', 'admin/build/imagecache'))));
+        // Support both locations of imagecache configuration
+        $link = IMAGECACHE_BASE == 1 ? l('admin/settings/imagecache', 'admin/settings/imagecache') : l('admin/build/imagecache', 'admin/build/imagecache');
+        drupal_set_message(t('In order to use Option Images you must first create image presets at !link.', array('!link' => $link)));
         break;
       }
       
@@ -278,9 +279,13 @@ function uc_option_image_form_alter($form_id, &$form){
  * Support both imagecache 1.6 and 2.0
  */
 if (module_exists('imagecache') && !function_exists('imagecache_presets')){
+  define('IMAGECACHE_BASE', 1);
   function imagecache_presets($reset = FALSE) {
     return _imagecache_get_presets($reset = FALSE);
   }
+}
+else {
+  define('IMAGECACHE_BASE', 2);
 }
 
 /**
