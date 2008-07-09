@@ -397,11 +397,11 @@ function uc_option_image_save($nid, $aid, $oid) {
       return FALSE;
     }
                                                   
-    // Check format
-    if (!in_array(pathinfo($file->filename, PATHINFO_EXTENSION), array('png', 'jpeg', 'gif'))){
+    // Check format   
+    if (!in_array(pathinfo($file->filename, PATHINFO_EXTENSION), array('png', 'jpg', 'gif'))){
       drupal_set_message(t('Please upload image using jpg, png, or gif formats.'), 'error');
       return FALSE;
-    }
+    }  
                          
     $dest = file_create_path(file_directory_path() . '/option-images');
     file_check_directory($dest, FILE_CREATE_DIRECTORY);
