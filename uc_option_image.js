@@ -13,14 +13,14 @@ UCOI.init = function() {
   this.defaultSize = Drupal.settings.UCOI.default_size;
   
   // Selects                                      
-  $('.add_to_cart select.form-select').change(function(){
+  $('.add-to-cart select.form-select').change(function(){
     if (aid = UCOI.getAID(this)){
       UCOI.switchImage(aid, this, size);  
     }
   });
   
   // Radios                                      
-  $('.add_to_cart .form-radios input').click(function(){
+  $('.add-to-cart .form-radios input').click(function(){
     if (aid = UCOI.getAID(this)){
       UCOI.switchImage(aid, this, size);  
     }
