@@ -392,7 +392,6 @@ function uc_option_image($node, $attributes, $size = '_original') {
  * @todo: static cache
  */
 function uc_option_image_load($nid, $aid, $oid) {
-  _t('uc_option_image_load',array('nid'=>$nid,'aid'=>$aid,'oid'=>$oid));
   static $files;
   $filename = uc_option_image_id($nid, $aid, $oid);
   if (empty($files[$filename])){
@@ -406,7 +405,6 @@ function uc_option_image_load($nid, $aid, $oid) {
       }
     }
   }
-  _t('uc_option_image_load',array($filename => $files[$filename]));
   return $files[$filename];
 }
 
