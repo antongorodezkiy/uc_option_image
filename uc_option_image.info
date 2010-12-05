@@ -1,3 +1,5 @@
+; $Id$
+
 name = Option Images
 description = Allows users to upload images per attribute option.
 dependencies[] = uc_attribute

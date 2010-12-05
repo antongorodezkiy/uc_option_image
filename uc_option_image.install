@@ -1,8 +1,10 @@
 <?php
+// $Id$
+
 
 function uc_option_image_install($no_image=NULL) {
   if (empty($noimage)) {
-    return uc_option_image_install(drupal_get_path('uc_option_image') .'/no_image.png');
+    return uc_option_image_install(drupal_get_path('module', 'uc_option_image') .'/no_image.png');
   }
   $info = image_get_info($no_image);
   if ($info) {

@@ -1,5 +1,3 @@
-
-     
       Ubercart Option Images
       Provided by www.vision-media.ca
       Developed by Tj Holowaychuk <tj@vision-media.ca>      
