@@ -244,6 +244,33 @@ function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
+/**
+ * Implementation of hook_form_FORM_ID_alter() for the "uc_object_options" form.
+ *
+ * This enables us to display the correct image in the shopping cart.
+ */
+function uc_option_image_form_uc_cart_view_form_alter(&$form, &$form_state) {
+  $imageAttributes            = variable_get('uc_option_image_attributes', '');
+  $attributesSameForAllImages = variable_get('uc_option_image_same_image', '');
+ 
+  foreach ($form['#parameters'][2] as $itemId => $cartItem) {
+    $nid = $cartItem->nid;
+ 
+    // FIXME: How should we handle more than one attribute with an image? Currently, the last one will take precedence...
+    foreach ($cartItem->data['attributes'] as $id => $value) {
+ 
+      if (!empty($imageAttributes[$id])) {
+        $optionImage = uc_option_image_load($nid, $id, $value, $attributesSameForAllImages[$id]);
+ 
+         // Don't swap product image if we have no image
+         if (!empty($optionImage) && ($optionImage->filename != 'option_image_0_0_0')) {
+           $form['items'][$itemId]['image']['#value'] = uc_option_image_get_cart_picture($optionImage, $nid);
+         }
+       }
+     }
+   }
+ }
+ 
 /* -----------------------------------------------------------------
 
   General Functionality 
@@ -597,6 +624,58 @@ function theme_uc_option_image_no_image_path($node, $size = '_original') {
   else {                                                        
     return $filename;
   }
+}
+
+/**
+ * Utility function for obtaining HTML code that loads the cart size image of the specified attribute option image.
+ *
+ * FIXME: Should this be a theme function? Technically, UC has a uc_product_get_picture() which also isn't a theme
+ *        function, so I suppose we should be consistent with that.
+ *
+ * @param   $optionImage
+ *          An image object that contains the information about the attribute option image. The cart size image that
+ *          is equivalent to this image will be returned.
+ *
+ * @param   $nid
+ *          The node ID of the product to which the image pertains. This is necessary to generate the appropriate link
+ *          back to the product page.
+ *
+ * @return  A string of HTML code that is appropriate to display the specified attribute option image in the
+ *          shopping cart, with a link back to the product page.
+ */
+function uc_option_image_get_cart_picture($optionImage, $nid) {
+  $output = '';
+
+  if (!empty($optionImage) && !empty($nid) && module_exists('imagecache')) {
+    // Get the current product image widget.
+    $imageWidget      = uc_product_get_image_widget();
+    $imageWidgetFunc  = $imageWidget['callback'];
+
+    $path = $optionImage->filepath;
+
+    if (file_exists($path)) {
+      $scaledImage = theme('imagecache', 'cart', $path, $optionImage->alt, $optionImage->title);
+
+      if ($format == 'product') {
+        if ($imageWidget) {
+          $output .=
+            '<a title="'. $optionImage->title .'" href="'. imagecache_create_url('product_full', $path) . '" ' .
+            $imageWidgetFunc(NULL) .'>';
+        }
+
+        $output .= $scaledImage;
+
+        if ($imageWidget) {
+          $output .= '</a>';
+        }
+      }
+      else {
+        $output = l($scaledImage, 'node/'. $nid, array('html' => TRUE));
+      }
+    }
+  }
+
+  return $output;
 }
 
 /* -----------------------------------------------------------------
