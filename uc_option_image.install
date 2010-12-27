@@ -26,10 +26,20 @@ function uc_option_image_install() {
 
 /**
  * Implementation of hook_uninstall().
- *   Removes default option image to file system.
+ *   Removes default option image to file system and variables.
  */
 function uc_option_image_uninstall() {
+  // Remove default option image.
   $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png'; 
   $default_image_name = 'option_image_0_0_0';
   db_query("DELETE FROM {files} WHERE filename = '%s' AND filepath = '%s'", $default_image_name, $default_image_path);
+
+  // Remove variables.
+  variable_del('uc_option_image_attributes');
+  variable_del('uc_option_image_effect');
+  variable_del('uc_option_image_js');
+  variable_del('uc_option_image_node_weight');
+  variable_del('uc_option_image_page_size');
+  variable_del('uc_option_image_preview_size');
+  variable_del('uc_option_image_teaser_size');
 }

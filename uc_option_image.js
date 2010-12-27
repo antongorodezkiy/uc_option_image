@@ -11,6 +11,7 @@ UCOI.init = function() {
   this.noimage = Drupal.settings.UCOI.noimage;
   this.attributes = Drupal.settings.UCOI.attributes;
   this.defaultSize = Drupal.settings.UCOI.default_size;
+  this.nodeid = Drupal.settings.UCOI.nodeid;
   
   // Selects                                      
   $('.add-to-cart select.form-select').change(function(){
@@ -31,24 +32,29 @@ UCOI.init = function() {
  * Switch an option image.
  */
 UCOI.switchImage = function(aid, input, size) {
-  var pid = $(input).parents('.node').attr('id');
-  var nid = pid.replace('node-', '');             
+  var nid = this.nodeid;
   var oid = $(input).val(); 
-  var image = $(input).parents('.content').children('img.uc-option-image');       
+  var image =  $(':not(.uc-option-image-preloaded) > div.uc-option-image-block').children('img.uc-option-image');
           
   // Make sure we have permission to switch this attribute
-  if (this.attributes[aid] === 0){
+  if (this.attributes[aid] == 0){
     return;
   }
-          
+
   try {          
     var images = this.images[nid][aid];
-    
-    if (images[oid].derivative){ 
-      this.switchImageEffect(image, images[oid].derivative);
-    } 
+
+    if ((oid=="" || images[oid].derivative=="") && image) {
+	    parentImage = image[0].parentNode;
+	    parentImage.removeChild(image[0]);    
+    } else if (image[0] && images[oid].derivative) {
+      this.switchImageEffect(image, images[oid]);
+    } else if (image[0] == null) {
+       parentImage = $(':not(.uc-option-image-preloaded) > div.uc-option-image-block');
+       parentImage[0].innerHTML = "<img src=\""+images[oid].derivative+"\" class=\"uc-option-image\">";
+    }
   }
-  catch (e){   
+  catch (e) {   
     this.switchImageEffect(image, this.noimage); 
   }
 };
@@ -56,16 +62,17 @@ UCOI.switchImage = function(aid, input, size) {
 /**
  * Switch the imagepath based on the selected effect.
  */
-UCOI.switchImageEffect = function(image, imagepath) {
+UCOI.switchImageEffect = function(image, imageproperty) {
+
   switch(this.effect){
     case 'fade':
-      $(image).fadeOut(200, function(){
-        $(this).attr('src', imagepath).fadeIn(200);
+      $(image).fadeOut(200, function(){		      
+        $(this).attr('src', imageproperty.derivative).fadeIn(200);
       });
       break;
       
     default:
-      $(image).attr('src', imagepath); 
+      $(image).attr('src', imageproperty.derivative); 
   }
 };
 
