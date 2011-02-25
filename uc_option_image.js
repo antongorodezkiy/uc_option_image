@@ -1,4 +1,3 @@
-// $Id$
 var UCOI = UCOI || {};
 
 /**
