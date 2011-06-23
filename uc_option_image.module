@@ -1,22 +1,21 @@
 <?php
-  
+
 /**
-* @file 
+* @file
 * Provides image upload fields for attribute options.
 * @author Tj Holowaychuk <tj@vision-media.ca/>
 * @link http://vision-media.ca
+* @todo supply 'default' image field when no option images are supplied or
+* no option image attributes are applied to the product
+* @todo create per class / product 'layer' mode allowing z-index to configure
+* a product using layers of PNG images
 */
 
-// @todo supply 'default' image field when no option images are supplied or 
-// no option image attributes are applied to the product
-// @todo create per class / product 'layer' mode allowing z-index to configure a product
-// using layers of PNG images
-
-/* -----------------------------------------------------------------
-
-  Hook Implementations 
-
------------------------------------------------------------------- */  
+/**
+ * ------------------------------------------------------------------
+ * Hook Implementations
+ * ------------------------------------------------------------------
+ */
 
 /**
  * Implementation of hook_perm();
@@ -30,15 +29,15 @@ function uc_option_image_perm() {
  */
 function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
-    case 'load':  
+    case 'load':
       // Load option images
       // Keep in mind the file 'filename' is a mash of nid/aid/oid
       $node->option_images = array();
       $node->option_images_cached = array();
       $node->attributes = uc_product_get_attributes($node->nid);
-       
+
       if ($node->attributes) {
-        $page_size = variable_get('uc_option_image_page_size', 'preview');     
+        $page_size = variable_get('uc_option_image_page_size', 'preview');
         $enabled_attributes = variable_get('uc_option_image_attributes', array());
         foreach($node->attributes as $attribute) {
           if ($attribute->options && $enabled_attributes[$attribute->aid]) {
@@ -55,57 +54,57 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
                 }
               }
             }
-          }           
+          }
         }
       }
       break;
-      
+
     case 'view':
       // @todo issue being invoked so many times?
       // @todo refactor
-      if (isset($node->content['add_to_cart'])) { 
+      if (isset($node->content['add_to_cart'])) {
         if (user_access('view option images')) {
-          if ($node->option_images) { 
-            $attributes = $node->attributes;          
-            $first_attribute = array_shift($node->attributes);  
+          if ($node->option_images) {
+            $attributes = $node->attributes;
+            $first_attribute = array_shift($node->attributes);
             array_unshift($node->attributes, $first_attribute);
-            $page_size = variable_get('uc_option_image_page_size', 'preview');  
-            $teaser_size = variable_get('uc_option_image_teaser_size', 'thumbnail'); 
+            $page_size = variable_get('uc_option_image_page_size', 'preview');
+            $teaser_size = variable_get('uc_option_image_teaser_size', 'thumbnail');
             $size = $a4 ? $page_size : $teaser_size;
-                   
+
             // Pass attributes to uc_option_image to populate JS settings
             if ($a4) {
-              uc_option_image($node, $attributes, $size); 
+              uc_option_image($node, $attributes, $size);
             }
-            
+
             // Determine if we have a default option using
             // the first attribute's default option
             if ($first_attribute->default_option){
               $default_option = $first_attribute->default_option;
             }
-                                       
+
             // Load the default image file
             $file = uc_option_image_load($node->nid, $first_attribute->aid, $default_option);
-                      
+
             // Display the image based on teaser/page view
             // Ensure that original file exists
             if ($file->filepath && file_exists($file->filepath)){
               $image = theme('uc_option_image', $first_attribute->aid, $file, $size);
             }
-            else {   
+            else {
               $image = theme('uc_option_image_no_image', $node, $size);
             }
-            
+
             // Preload images
             if ($a4) {
-              $preloaded_images = theme('uc_option_image_preloaded', $first_attribute->aid, $node, $size); 
+              $preloaded_images = theme('uc_option_image_preloaded', $first_attribute->aid, $node, $size);
             }
-            
+
             $node->content['option_image'] = array(
                 '#value' => $image . $preloaded_images,
                 '#access' => user_access('view option images'),
                 '#weight' => (int) variable_get('uc_option_image_node_weight', '10'),
-              );      
+              );
           }
         }
       }
@@ -119,31 +118,31 @@ function uc_option_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
 function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     // Attribute options form
-    case 'uc_object_options_form': 
+    case 'uc_object_options_form':
       // Make sure we are a node's options page
       if (!is_numeric(arg(1)) && arg(0) != 'node'){
         return;
-      }           
+      }
       // Add option image previews and browse fields
-      if ($aids = element_children($form['attributes'])){  
+      if ($aids = element_children($form['attributes'])){
         $node = menu_get_object();
         $nid = $node->nid;
         $attributes = variable_get('uc_option_image_attributes', '');
-                                       
-        foreach($aids as$aid) { 
+
+        foreach($aids as $aid) {
           // Make sure the attribute is switchable
           if (isset($attributes[$aid]) && !$attributes[$aid]){
             continue;
           }
-          
+
           // Display fields
-          if ($oids = element_children($form['attributes'][$aid]['options'])){ 
-            foreach($oids as$oid) { 
+          if ($oids = element_children($form['attributes'][$aid]['options'])){
+            foreach($oids as $oid) {
               $file = uc_option_image_load($nid, $aid, $oid);
-              
+
               if (!empty($file)) {
                 $form['attributes'][$aid]['options'][$oid]['option_image_preview'] = array(
-                  '#type' => 'markup',                       
+                  '#type' => 'markup',
                   '#value' => theme('uc_option_image', $aid, $file, variable_get('uc_option_image_preview_size', '_original')),
                 );
                 $form['attributes'][$aid]['options'][$oid][uc_option_image_id($nid, $aid, $oid)] = array(
@@ -151,26 +150,59 @@ function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
                   '#title' => t('Image'),
                   '#name' => 'files[' . uc_option_image_id($nid, $aid, $oid) . ']',
                   '#size' => 8,
-                  '#default_value' => $file->filename,       
+                  '#default_value' => $file->filename,
                 );
               }
             }
-          } 
-        } 
-        
+          }
+        }
+
         $form['#submit'][] = 'uc_option_image_uc_object_options_form';
         $form['#attributes'] = array('enctype' => 'multipart/form-data');
       }
       break;
-    
-    // Attribute settings form  
+
+    case 'uc_attribute_option_form':
+      // We use 0 instead of the nid to define the default image for an option
+      $attribute_same_image = variable_get('uc_option_image_same_image','');
+      $aid = arg(3);
+      $oid = arg(5);
+      $same = $attribute_same_image[$aid];
+      $file = uc_option_image_load(0, arg(3), $oid, $same);
+
+      if (!empty($file)) {
+        $form['option_image_preview'] = array(
+          '#type' => 'markup',
+          '#value' => theme('uc_option_image', $aid, $file, variable_get('uc_option_image_preview_size', '_original')),
+        );
+        $form[uc_option_image_id(0, $aid, $oid)] = array(
+          '#type' => 'file',
+          '#title' => t('Image'),
+          '#name' => 'files[' . uc_option_image_id(0, $aid, $oid) . ']',
+          '#size' => 8,
+          '#default_value' => $file->filename,
+        );
+        if ($file->filename != 'option_image_0_0_0') {
+          $form['remove'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Remove')
+          );
+        }
+      }
+
+      $form['#submit'][] = 'uc_option_image_uc_attribute_option_form';
+      $form['#attributes'] = array('enctype' => 'multipart/form-data');
+
+      break;
+
+    // Attribute settings form
     case 'uc_attribute_admin_settings':
       if (!user_access('administer option images')) {
-        break;     
+        break;
       }
-      
-      $attribute_options = uc_option_image_get_attribute_options(); 
-      
+
+      $attribute_options = uc_option_image_get_attribute_options();
+
       // Ensure we have imagecache presets otherwise
       // display a message so they can create presets first.
       if (!$size_options = uc_option_image_get_size_options()) {
@@ -179,12 +211,12 @@ function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
         drupal_set_message(t('In order to use Option Images you must first create image presets at !link.', array('!link' => $link)));
         break;
       }
-      
+
       $form['#validate'][] = 'uc_option_image_uc_attribute_admin_settings_validate';
       $form['uc_option_image'] = array(
           '#type' => 'fieldset',
           '#title' => t('Option Images'),
-        );    
+        );
       $form['uc_option_image']['uc_option_image_js'] = array(
           '#type' => 'checkbox',
           '#title' => t('Switch Images'),
@@ -209,7 +241,7 @@ function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
               'fade' => t('Fade'),
             ),
           '#default_value' => variable_get('uc_option_image_effect', 'fade'),
-        );     
+        );
       $form['uc_option_image']['uc_option_image_preview_size'] = array(
           '#type' => 'select',
           '#title' => t('Preview Image Size'),
@@ -237,8 +269,8 @@ function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
           '#description' => t('Weight used to determine where the option image will display.'),
           '#default_value' => variable_get('uc_option_image_node_weight', '9'),
         );
-                                              
-      $form['buttons']['#weight'] = 5;        
+
+      $form['buttons']['#weight'] = 5;
       break;
   }
 }
@@ -251,16 +283,16 @@ function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
 function uc_option_image_form_uc_cart_view_form_alter(&$form, &$form_state) {
   $imageAttributes            = variable_get('uc_option_image_attributes', '');
   $attributesSameForAllImages = variable_get('uc_option_image_same_image', '');
- 
+
   foreach ($form['#parameters'][2] as $itemId => $cartItem) {
     $nid = $cartItem->nid;
- 
+
     // FIXME: How should we handle more than one attribute with an image? Currently, the last one will take precedence...
     foreach ($cartItem->data['attributes'] as $id => $value) {
- 
+
       if (!empty($imageAttributes[$id])) {
         $optionImage = uc_option_image_load($nid, $id, $value, $attributesSameForAllImages[$id]);
- 
+
          // Don't swap product image if we have no image
          if (!empty($optionImage) && ($optionImage->filename != 'option_image_0_0_0')) {
            $form['items'][$itemId]['image']['#value'] = uc_option_image_get_cart_picture($optionImage, $nid);
@@ -269,48 +301,48 @@ function uc_option_image_form_uc_cart_view_form_alter(&$form, &$form_state) {
      }
    }
  }
- 
+
 /* -----------------------------------------------------------------
 
-  General Functionality 
+  General Functionality
 
 ------------------------------------------------------------------ */
 
 /**
  * Add JavaSript and CSS in order to run uc_option_image's switching functionality.
- * 
+ *
  * This function also populates Drupal.settings with uc_option_image filepaths based
  * on $node and $attributes passed.
- * 
+ *
  * @param object $node
  *   Product node object.
- * 
+ *
  * @param array $attributes
  *   Attribute objects.
- * 
+ *
  * @param string $size
- *   (optional) Imagecache preset or '_original'.  
- * 
+ *   (optional) Imagecache preset or '_original'.
+ *
  * @todo: remove $attributes param and just use $node->attributes
  * @todo: abstract out the drupal_add_js so the object can be returned via js http request
  */
 function uc_option_image($node, $attributes, $size = '_original') {
-  static $prep, $data;         
-  
+  static $prep, $data;
+
   // Check if this feature is enabled
   if (!variable_get('uc_option_image_js', TRUE)) {
     return;
-  }  
-  
+  }
+
   // Make sure we are even switching attributes
   if (!variable_get('uc_option_image_attributes', FALSE)) {
-    return;  
-  }   
-                       
+    return;
+  }
+
   // Static prep
   if (!$prep){
     drupal_add_js(drupal_get_path('module', 'uc_option_image') . '/uc_option_image.js');
-    
+
     $data = array();
     $data['size'] = $size;
     $data['effect'] = variable_get('uc_option_image_effect', 'fade');
@@ -319,28 +351,28 @@ function uc_option_image($node, $attributes, $size = '_original') {
     $data['nodeid'] = $node->nid;
 
     $prep = TRUE;
-  }                             
+  }
 
   $shownoimage = variable_get('uc_option_image_show_noimage', FALSE);
-  
+
   // Populate Drupal.settings.UCOI.images
   // this prevents the module from needing additional
   // HTTP requests in order to find the image needed
-  // for each option.                               
-  if (count($attributes)) { 
-    foreach($attributes as$aid => $attribute){  
-      if (count($attribute->options)){     
+  // for each option.
+  if (count($attributes)) {
+    foreach($attributes as$aid => $attribute){
+      if (count($attribute->options)){
         foreach($attribute->options as$oid => $option){
           $file = uc_option_image_load($node->nid, $aid, $oid);
-                            
-          if ($file->filepath){              
+
+          if ($file->filepath){
             $data['images'][$node->nid][$aid][$oid] = array(
                 'nid' => $node->nid,
                 'aid' => $aid,
                 'oid' => $oid,
                 'filepath' => $file->filepath,
                 'derivative' => $node->option_images_cached[$oid],
-              );     
+              );
           }
         }
       }
@@ -349,11 +381,11 @@ function uc_option_image($node, $attributes, $size = '_original') {
 
   // @todo: fix array_merge_recursive() issues...
   drupal_add_js(array('UCOI' => $data), 'setting');
-}       
-                          
+}
+
 /**
  * Load image file.
- * 
+ *
  * @todo: static cache
  */
 function uc_option_image_load($nid, $aid, $oid) {
@@ -374,20 +406,20 @@ function uc_option_image_load($nid, $aid, $oid) {
 }
 
 /**
- * Save the uploaded file in the 'option-images' folder and insert 
+ * Save the uploaded file in the 'option-images' folder and insert
  * into the files table.
- * 
+ *
  * @param int $nid
- * 
+ *
  * @param int $aid
- * 
+ *
  * @param int $oid
- * 
+ *
  * @return mixed
  *   - Success: File object
  *   - Failure: FALSE
  */
-function uc_option_image_save($nid, $aid, $oid) { 
+function uc_option_image_save($nid, $aid, $oid) {
   global $user;
   $validators = array(
     'file_validate_size' => array(2 * 1024 * 1024),
@@ -403,12 +435,12 @@ function uc_option_image_save($nid, $aid, $oid) {
       $file->status = FILE_STATUS_PERMANENT;
       uc_option_image_delete($nid, $aid, $oid);
       drupal_write_record('files', $file);
-      
+
       return $file;
     }
     else {
       drupal_set_message(t('Failed to save image.'), 'error');
-      
+
       return FALSE;
     }
   }
@@ -416,18 +448,18 @@ function uc_option_image_save($nid, $aid, $oid) {
 
 /**
  * Delete an option image.
- * 
+ *
  * @param int $nid
- * 
+ *
  * @param int $aid
- * 
+ *
  * @param int $oid
- * 
+ *
  * @return mixed
  *   Results of db_query().
  */
 function uc_option_image_delete($nid, $aid, $oid) {
-  return db_query("DELETE FROM {files} WHERE filename = '%s'", uc_option_image_id($nid,$aid,$oid));    
+  return db_query("DELETE FROM {files} WHERE filename = '%s'", uc_option_image_id($nid,$aid,$oid));
 }
 
 /**
@@ -435,16 +467,16 @@ function uc_option_image_delete($nid, $aid, $oid) {
  */
 function uc_option_image_get_size_options() {
   $options = array('_original' => t('Original'));
-  $presets = imagecache_presets(); 
-  
+  $presets = imagecache_presets();
+
   if (empty($presets)) {
     return FALSE;
   }
-  
-  foreach((array) $presets as$preset){ 
+
+  foreach((array) $presets as$preset){
     $options[$preset['presetname']] = $preset['presetname'];
   }
-       
+
   return $options;
 }
 
@@ -453,12 +485,12 @@ function uc_option_image_get_size_options() {
  */
 function uc_option_image_get_attribute_options() {
   $output = array();
-  
+
   $results = db_query("SELECT aid, name FROM {uc_attributes}");
   while ($result = db_fetch_array($results)){
     $output[$result['aid']] = $result['name'];
   }
-  
+
   return $output;
 }
 
@@ -471,7 +503,7 @@ function uc_option_image_id($nid, $aid, $oid) {
 
 /* -----------------------------------------------------------------
 
-  Form Handling 
+  Form Handling
 
 ------------------------------------------------------------------ */
 
@@ -479,20 +511,20 @@ function uc_option_image_id($nid, $aid, $oid) {
  * Handle uc_object_options_form submit.
  */
 function uc_option_image_uc_object_options_form($form, &$form_state) {
-  if ($aids = element_children($form_state['values']['attributes'])){ 
-    foreach($aids as$aid){ 
-      if ($oids = element_children($form_state['values']['attributes'][$aid]['options'])){ 
+  if ($aids = element_children($form_state['values']['attributes'])){
+    foreach($aids as$aid){
+      if ($oids = element_children($form_state['values']['attributes'][$aid]['options'])){
         foreach($oids as$oid){
           uc_option_image_save($form_state['values']['id'], $aid, $oid);
-        }                                                             
-      } 
-    } 
-  }    
+        }
+      }
+    }
+  }
 }
 
 /* -----------------------------------------------------------------
 
-  Themes 
+  Themes
 
 ------------------------------------------------------------------ */
 
@@ -575,38 +607,38 @@ function theme_uc_option_image($aid, $file, $size = '_original') {
  * Theme option image preloaded images.
  *
  * @param object $node
- * 
+ *
  * @param string $size
  *   (optional) An imagecache preset or '_original'.
- * 
+ *
  * @return string
  *   Markup.
  */
 function theme_uc_option_image_preloaded($aid, $node, $size = '_original') {
   $output = '<div id="uc-option-image-preloaded-' . $node->nid . '" class="uc-option-image-preloaded" style="display: none;">';
-  
-  foreach((array) $node->option_images as$i => $option_image){   
+
+  foreach((array) $node->option_images as$i => $option_image){
     $output .= theme('uc_option_image', $aid, $option_image, $size);
   }
-  
+
   $output .= theme('uc_option_image_no_image', $node, $size);
-  
+
   $output .= '</div>';
-          
+
   return $output;
 }
 
 /**
- * Theme the no image placeholder. 
+ * Theme the no image placeholder.
  */
 function theme_uc_option_image_no_image($node, $size = '_original') {
   $attributes = array('class' => 'uc-option-image');
   $filename = path_to_theme() . '/images/noimage.png';
-  
-  if ($size != '_original'){           
+
+  if ($size != '_original'){
     return theme('imagecache', $size, $filename, t('No Image'), NULL, $attributes);
   }
-  else {                                                        
+  else {
     return theme('image', $filename, t('No Image'), NULL, $attributes, FALSE);
   }
 }
@@ -616,11 +648,11 @@ function theme_uc_option_image_no_image($node, $size = '_original') {
  */
 function theme_uc_option_image_no_image_path($node, $size = '_original') {
   $filename = drupal_get_path('module', 'uc_option_image') . '/noimage.png';
-  
-  if ($size != '_original'){           
+
+  if ($size != '_original'){
     return imagecache_create_url($size, $filename);
   }
-  else {                                                        
+  else {
     return $filename;
   }
 }
@@ -679,13 +711,13 @@ function uc_option_image_get_cart_picture($optionImage, $nid) {
 
 /* -----------------------------------------------------------------
 
-  Theme Overrides 
-                                                                                   
+  Theme Overrides
+
 ------------------------------------------------------------------ */
 
 /**
- * Display the option form. 
- * 
+ * Display the option form.
+ *
  * Add our image fields to the table.
  */
 function phptemplate_uc_object_options_form($form) {
@@ -705,11 +737,11 @@ function phptemplate_uc_object_options_form($form) {
         $row[] = drupal_render($form['attributes'][$key]['options'][$oid]['weight']);
         $row[] = drupal_render($form['attributes'][$key]['options'][$oid]['ordering']);
         // MOD: added the image field and preview
-        $row[] = drupal_render($form['attributes'][$key]['options'][$oid][uc_option_image_id(arg(1), $key, $oid)]); 
+        $row[] = drupal_render($form['attributes'][$key]['options'][$oid][uc_option_image_id(arg(1), $key, $oid)]);
         $row[] = drupal_render($form['attributes'][$key]['options'][$oid]['option_image_preview']);
-        
+
         if (!$first) {
-          // MOD: changed from -7 to -9 to accomidate the new columns 
+          // MOD: changed from -7 to -9 to accomidate the new columns
           $row = array_pad($row, -9, '');
         }
         else {
@@ -741,4 +773,3 @@ function phptemplate_uc_object_options_form($form) {
 
   return $output;
 }
-
