@@ -123,11 +123,6 @@ function uc_option_image_node_view($node, $view_mode = 'full') {
 }
 
 /**
- * Implements hook_nodeapi().
- */
-function uc_option_image_nodeapi_OLD(&$node, $op, $a3 = NULL, $a4 = NULL) { }
-
-/**
  * Implements hook_form_alter().
  */
 function uc_option_image_form_alter(&$form, &$form_state, $form_id) {
