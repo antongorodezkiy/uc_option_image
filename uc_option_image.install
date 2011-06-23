@@ -12,7 +12,7 @@
 function uc_option_image_install() {
   $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png';
   $default_image_name = 'option_image_0_0_0';
-  $file_path = db_result(db_query("SELECT fid from {files} WHERE filename = '%s' AND filepath = '%s'", $default_image_name, $default_image_path));
+  $file_path = db_query("SELECT fid from {files} WHERE filename = :filename AND filepath = :filepath", array(':filename' => $default_image_name, ':filepath' => $default_image_path))->fetchField();
   // Make sure image doesn't already exist in the files table.
   if (!$file_path) {
     $info = image_get_info($default_image_path);
@@ -22,7 +22,7 @@ function uc_option_image_install() {
       'filepath' => $default_image_path,
       'filemime' => $info['file_mime'],
       'filesize' => $info['file_size'],
-      'status' => FILE_STATUS_PERMANENT
+      'status' => FILE_STATUS_PERMANENT,
     );
     drupal_write_record('files', $file);
   }
@@ -36,7 +36,12 @@ function uc_option_image_uninstall() {
   // Remove default option image.
   $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png';
   $default_image_name = 'option_image_0_0_0';
-  db_query("DELETE FROM {files} WHERE filename = '%s' AND filepath = '%s'", $default_image_name, $default_image_path);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("DELETE FROM {files} WHERE filename = '%s' AND filepath = '%s'", $default_image_name, $default_image_path) */
+  db_delete('files')
+  ->condition('filename', $default_image_name)
+  ->condition('filepath', $default_image_path)
+  ->execute();
 
   // Remove variables.
   variable_del('uc_option_image_attributes');
