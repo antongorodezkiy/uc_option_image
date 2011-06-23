@@ -5,9 +5,9 @@
  *   Adds default option image to file system.
  */
 function uc_option_image_install() {
-  $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png'; 
+  $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png';
   $default_image_name = 'option_image_0_0_0';
-  $file_path = db_result(db_query("SELECT fid from {files} WHERE filename = '%s' AND filepath", $default_image_name, $default_image_path)); 
+  $file_path = db_result(db_query("SELECT fid from {files} WHERE filename = '%s' AND filepath = '%s'", $default_image_name, $default_image_path));
   // Make sure image doesn't already exist in the files table.
   if (!$file_path) {
     $info = image_get_info($default_image_path);
@@ -29,7 +29,7 @@ function uc_option_image_install() {
  */
 function uc_option_image_uninstall() {
   // Remove default option image.
-  $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png'; 
+  $default_image_path = drupal_get_path('module', 'uc_option_image') . '/no_image.png';
   $default_image_name = 'option_image_0_0_0';
   db_query("DELETE FROM {files} WHERE filename = '%s' AND filepath = '%s'", $default_image_name, $default_image_path);
 
