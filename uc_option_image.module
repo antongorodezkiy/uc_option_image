@@ -57,7 +57,7 @@ function uc_option_image_node_load($node, $types) {
               $node->option_images_cached[$option->oid] = imagecache_create_url($page_size, $file->filepath);
             }
             else {
-              $node->option_images_cached[$option->oid] = $file->filepath;
+              $node->option_images_cached[$option->oid] = url($file->filepath, array('absolute' => TRUE));
             }
           }
         }
