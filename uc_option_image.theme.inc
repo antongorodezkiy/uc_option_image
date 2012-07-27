@@ -9,7 +9,7 @@ function theme_uc_option_image_selected(&$variables) {
   $pid    = $variables['pid'];
 
   $uc_attribute = uc_attribute_load($aid);
-  dpm($uc_attribute, 'attribute');
+  //dpm($uc_attribute, 'attribute');
   if (!$uc_attribute) {
     return "";
   }
