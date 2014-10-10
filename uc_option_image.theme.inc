@@ -17,7 +17,11 @@ function theme_uc_option_image_selected(&$variables) {
   if (empty($values['fid']) || empty($values['fid']['value'])) {
     return '';
   }
-  if (empty($values['selected_style']) || empty($values['selected_style']['value'])) {
+
+  if (isset($values['selected_style']) && isset($values['selected_style']['value']) 
+      && (!empty($values['selected_style']['value']))) {
+    $stylename = $values['selected_style']['value'];
+  } else {
     return '';
   }
 
@@ -28,7 +32,7 @@ function theme_uc_option_image_selected(&$variables) {
     $values = uc_option_image_values('uc_product', array('aid' => $aid, 'pid' => $pid, 'oid' => $oid));
     if (isset($values['fid']) && !empty($values['fid']['value'])) {
       $file = file_load($values['fid']['value']);
-      $img  = theme('image_style', array('style_name' => $values['selected_style']['value'], 'path' => $file->uri));
+      $img  = theme('image_style', array('style_name' => $stylename, 'path' => $file->uri));
       $options[$oid] = $img;
     }
 
@@ -46,8 +50,12 @@ function theme_uc_option_image_inline(&$variables) {
   if (empty($values['fid']) || empty($values['fid']['value'])) {
     return '';
   }
-  if (empty($values['inline_style']) || empty($values['inline_style']['value'])) {
-    return '';
+
+  if (isset($values['inline_style']) && isset($values['inline_style']['value']) 
+      && (!empty($values['inline_style']['value']))) {
+    $stylename = $values['inline_style']['value'];
+  } else {
+    $stylename = 'medium';
   }
 
   $file = file_load($values['fid']['value']);
@@ -57,7 +65,7 @@ function theme_uc_option_image_inline(&$variables) {
 
   return "
     <span class='uc-option-image uc-option-image-inline'>
-      " . theme('image_style', array('style_name' => $values['inline_style']['value'], 'path' => $file->uri)) . "
+      " . theme('image_style', array('style_name' => $stylename, 'path' => $file->uri)) . "
     </span>
   ";
 }
