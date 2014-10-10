@@ -8,8 +8,8 @@ function theme_uc_option_image_selected(&$variables) {
   $aid    = $variables['aid'];
   $pid    = $variables['pid'];
 
-  $uc_attribute = uc_attribute_load($aid);
-  //dpm($uc_attribute, 'attribute');
+  $uc_attribute = uc_attribute_load($aid, $pid, 'product');
+
   if (!$uc_attribute) {
     return "";
   }
