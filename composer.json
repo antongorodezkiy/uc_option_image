@@ -1,0 +1,15 @@
+{
+    "name": "drupal/uc_option_image",
+    "description": "Ubercart Option Images",
+    "type": "drupal-module",
+    "homepage": "https://drupal.org/project/uc_option_image",
+    "authors": [
+        {
+            "name": "Ryan Price (liberatr)",
+            "homepage": "http://github.com/liberatr",
+            "role": "Maintainer"
+        }
+    ],
+    "license": "GPL-2.0+",
+    "minimum-stability": "dev"
+}

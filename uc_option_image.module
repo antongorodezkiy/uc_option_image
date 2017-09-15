@@ -194,8 +194,6 @@ function uc_option_image_form_uc_object_options_form_alter(&$form, &$form_state)
       continue;
     }
 
-    $object   = uc_option_image_objects('uc_product', array('aid' => $aid, $id_key => $nid));
-    $defaults = uc_option_image_values('uc_product', array('aid' => $aid, $id_key => $nid));
     $form['uc_option_image']['option_image_attribute-' . $aid] = array(
       '#type'         => 'fieldset',
       '#title'        => t("Option images for @attribute", array('@attribute' => $uc_attribute->name)),
@@ -204,6 +202,9 @@ function uc_option_image_form_uc_object_options_form_alter(&$form, &$form_state)
     );
 
     foreach ($uc_attribute->options as $oid => $uc_option) {
+      $object   = uc_option_image_objects('uc_product', array('aid' => $aid, $id_key => $nid, 'oid' => $oid));
+      $defaults = uc_option_image_values('uc_product', array('aid' => $aid, $id_key => $nid, 'oid' => $oid));
+
       $option_defaults = uc_option_image_values('uc_product', array('aid' => $aid, $id_key => $nid, 'oid' => $oid), 'fid');
       $form['uc_option_image']['option_image_attribute-' . $aid]['option_image-fid-' . $oid] = uc_option_image_file_form($type, $object, $option_defaults);
       $form['uc_option_image']['option_image_attribute-' . $aid]['option_image-fid-' . $oid]['#title'] = t("Image for !option", array('!option' => $uc_option->name));
@@ -288,7 +289,7 @@ function uc_option_image_form(&$form, &$form_state, $type) {
     ),
 
     'uc_option_image_fid' => uc_option_image_file_form($type, $object, $values),
-      
+
     uc_option_image_display_form($type, $object, $values)
   );
 
@@ -446,6 +447,7 @@ function uc_option_image_save_form_data($type, $ids, $values) {
 
   // delete a file if it's been removed
   if (isset($values['fid']) && $values['fid'] != $object->fid) {
+
     if ($object->fid) {
       $file = file_load($object->fid);
       if ($file) {
